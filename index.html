@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#111419">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Правило 37%">
+<title>Правило 37% — секретарь выбора</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #111419;
+    --panel: #1a1e25;
+    --panel-2: #222731;
+    --ink: #f5f7fa;
+    --muted: #9199a6;
+    --line: rgba(255,255,255,.10);
+    --accent: #ffd45e;
+    --accent-ink: #221b05;
+    --good: #6ee7a2;
+    --danger: #ff7373;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { min-height: 100%; margin: 0; background: var(--bg); }
+  body {
+    color: var(--ink); font-family: Inter, "Segoe UI", system-ui, sans-serif;
+    overscroll-behavior: none;
+  }
+  button, input { font: inherit; }
+  button { touch-action: manipulation; }
+  .shell {
+    width: min(560px, 100%); min-height: 100dvh; margin: auto;
+    padding:
+      max(20px, env(safe-area-inset-top))
+      18px
+      max(24px, env(safe-area-inset-bottom));
+    display: flex; flex-direction: column;
+  }
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    min-height: 42px;
+  }
+  .brand { font-size: 14px; font-weight: 750; letter-spacing: .02em; }
+  .brand span { color: var(--accent); }
+  .ghost {
+    min-height: 38px; padding: 0 11px; border: 1px solid var(--line);
+    border-radius: 10px; color: var(--muted); background: transparent;
+    cursor: pointer;
+  }
+  main { flex: 1; display: flex; flex-direction: column; padding-top: 28px; }
+  .screen { display: none; flex: 1; flex-direction: column; }
+  .screen.active { display: flex; }
+  .kicker {
+    margin: 0 0 13px; color: var(--accent); font-size: 12px;
+    font-weight: 800; letter-spacing: .14em; text-transform: uppercase;
+  }
+  h1 {
+    margin: 0; max-width: 12ch; font-size: clamp(42px, 11vw, 68px);
+    line-height: .96; letter-spacing: -.055em;
+  }
+  .lead {
+    margin: 22px 0 34px; max-width: 32rem; color: var(--muted);
+    font-size: 16px; line-height: 1.55;
+  }
+  .setup-card, .threshold-card, .result-card {
+    border: 1px solid var(--line); border-radius: 22px; background: var(--panel);
+  }
+  .setup-card { padding: 20px; }
+  label {
+    display: block; margin-bottom: 9px; color: var(--muted);
+    font-size: 12px; font-weight: 750; letter-spacing: .04em; text-transform: uppercase;
+  }
+  .total-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; }
+  #total {
+    min-width: 0; height: 58px; padding: 0 16px; border: 1px solid var(--line);
+    border-radius: 14px; outline: none; color: var(--ink);
+    background: var(--panel-2); font-size: 25px; font-weight: 720;
+  }
+  #total:focus { border-color: var(--accent); }
+  .primary {
+    min-height: 58px; padding: 0 20px; border: 0; border-radius: 14px;
+    color: var(--accent-ink); background: var(--accent);
+    font-weight: 850; cursor: pointer;
+  }
+  .formula {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px;
+    margin-top: 15px;
+  }
+  .metric {
+    min-width: 0; padding: 12px; border-radius: 13px;
+    background: rgba(255,255,255,.045);
+  }
+  .metric b { display: block; margin-bottom: 2px; font-size: 20px; }
+  .metric span { color: var(--muted); font-size: 10px; line-height: 1.2; }
+  .fineprint {
+    margin: auto 0 0; padding-top: 24px; color: #6f7783;
+    font-size: 11px; line-height: 1.5;
+  }
+  .session-top {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 15px;
+  }
+  .phase {
+    display: inline-flex; align-items: center; min-height: 27px;
+    padding: 0 10px; border-radius: 999px; color: var(--accent-ink);
+    background: var(--accent); font-size: 11px; font-weight: 850;
+    letter-spacing: .08em; text-transform: uppercase;
+  }
+  .phase.hunt { color: #062215; background: var(--good); }
+  .counter { color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+  .progress-track {
+    height: 5px; margin: 15px 0 22px; overflow: hidden;
+    border-radius: 99px; background: rgba(255,255,255,.08);
+  }
+  .progress { height: 100%; width: 0; border-radius: inherit; background: var(--accent); transition: width .35s ease; }
+  .threshold-card {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; padding: 16px 18px;
+  }
+  .threshold-label { color: var(--muted); font-size: 12px; }
+  .threshold-value { margin-top: 3px; font-size: 19px; font-weight: 780; }
+  .threshold-score {
+    min-width: 57px; text-align: right; color: var(--accent);
+    font-size: 35px; font-weight: 850; line-height: 1;
+  }
+  .question { margin: 36px 0 18px; font-size: 22px; font-weight: 760; }
+  .ratings {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 9px;
+  }
+  .rating {
+    aspect-ratio: 1; border: 1px solid var(--line); border-radius: 16px;
+    color: var(--ink); background: var(--panel); font-size: 22px;
+    font-weight: 790; cursor: pointer; transition: transform .08s ease, background .15s;
+  }
+  .rating:active { transform: scale(.93); background: var(--panel-2); }
+  .scale-labels {
+    display: flex; justify-content: space-between; margin-top: 10px;
+    color: #69717d; font-size: 10px;
+  }
+  .session-footer {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: auto; padding-top: 24px;
+  }
+  .probability { color: var(--muted); font-size: 11px; }
+  .undo {
+    min-height: 38px; border: 0; color: var(--muted);
+    background: transparent; cursor: pointer;
+  }
+  .undo:disabled { opacity: .28; cursor: default; }
+  .result-screen {
+    justify-content: center; text-align: center;
+  }
+  .signal {
+    width: 96px; height: 96px; margin: 0 auto 28px; display: grid;
+    place-items: center; border-radius: 50%; color: var(--accent-ink);
+    background: var(--good); font-size: 42px; font-weight: 900;
+    box-shadow: 0 0 0 0 rgba(110,231,162,.5);
+    animation: pulse 1.25s ease-out infinite;
+  }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(110,231,162,.45); }
+    100% { box-shadow: 0 0 0 38px rgba(110,231,162,0); }
+  }
+  .result-screen h2 {
+    margin: 0; font-size: clamp(52px, 16vw, 82px);
+    line-height: .92; letter-spacing: -.06em;
+  }
+  .result-subtitle {
+    margin: 20px auto 28px; max-width: 29rem; color: var(--muted);
+    font-size: 16px; line-height: 1.5;
+  }
+  .result-card {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 1px;
+    overflow: hidden; margin-bottom: 14px; text-align: left;
+  }
+  .result-cell { padding: 17px; background: var(--panel); }
+  .result-cell span { display: block; color: var(--muted); font-size: 11px; }
+  .result-cell b { display: block; margin-top: 4px; font-size: 22px; }
+  .full { width: 100%; margin-top: 10px; }
+  .flash {
+    position: fixed; inset: 0; z-index: 99; pointer-events: none;
+    background: var(--good); opacity: 0;
+  }
+  .flash.go { animation: flash .75s ease-out; }
+  @keyframes flash {
+    0% { opacity: .78; }
+    100% { opacity: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="flash" id="flash"></div>
+<div class="shell">
+  <header>
+    <div class="brand">Секретарь <span>37%</span></div>
+    <button class="ghost" id="headerReset" hidden>Сбросить</button>
+  </header>
+
+  <main>
+    <section class="screen active" id="setup">
+      <p class="kicker">Оптимальная остановка</p>
+      <h1>Когда пора перестать выбирать?</h1>
+      <p class="lead">
+        Сначала изучи рынок, ничего не выбирая. Затем бери первый вариант,
+        который лучше всего увиденного в разведке.
+      </p>
+      <div class="setup-card">
+        <label for="total">Сколько вариантов успеешь посмотреть?</label>
+        <div class="total-row">
+          <input id="total" type="number" min="3" max="500" inputmode="numeric" value="20">
+          <button class="primary" id="start">Начать</button>
+        </div>
+        <div class="formula">
+          <div class="metric"><b id="previewExplore">7</b><span>только разведка</span></div>
+          <div class="metric"><b id="previewHunt">13</b><span>можно выбирать</span></div>
+          <div class="metric"><b id="previewProbability">38%</b><span>шанс взять лучший</span></div>
+        </div>
+      </div>
+      <p class="fineprint">
+        Теоретическая вероятность верна, если варианты приходят в случайном порядке
+        и их качество различается. Оценки 1–10 — практическое приближение.
+      </p>
+    </section>
+
+    <section class="screen" id="session">
+      <div class="session-top">
+        <span class="phase" id="phase">Разведка</span>
+        <span class="counter"><b id="current">1</b> из <span id="totalShown">20</span></span>
+      </div>
+      <div class="progress-track"><div class="progress" id="progress"></div></div>
+
+      <div class="threshold-card">
+        <div>
+          <div class="threshold-label" id="thresholdLabel">Ищем лучший ориентир</div>
+          <div class="threshold-value" id="thresholdText">Разведка: 0 из 7</div>
+        </div>
+        <div class="threshold-score" id="thresholdScore">—</div>
+      </div>
+
+      <div class="question">Как тебе этот вариант?</div>
+      <div class="ratings" id="ratings"></div>
+      <div class="scale-labels"><span>точно нет</span><span>определённо да</span></div>
+
+      <div class="session-footer">
+        <span class="probability" id="sessionProbability"></span>
+        <button class="undo" id="undo" disabled>↶ Отменить оценку</button>
+      </div>
+    </section>
+
+    <section class="screen result-screen" id="result">
+      <div class="signal" id="signal">✓</div>
+      <p class="kicker" id="resultKicker">Порог пройден</p>
+      <h2 id="resultTitle">ЭТО ОН.<br>БЕРИ.</h2>
+      <p class="result-subtitle" id="resultSubtitle"></p>
+      <div class="result-card">
+        <div class="result-cell"><span>этот вариант</span><b id="resultScore">9/10</b></div>
+        <div class="result-cell"><span>порог разведки</span><b id="resultThreshold">8/10</b></div>
+      </div>
+      <button class="primary full" id="again">Новый выбор</button>
+    </section>
+  </main>
+</div>
+
+<script>
+const $ = selector => document.querySelector(selector);
+const screens = ["setup", "session", "result"];
+const state = {
+  total: 20,
+  explore: 7,
+  probability: 0,
+  index: 1,
+  scores: [],
+  best: -Infinity,
+  bestIndex: 0,
+  finished: false
+};
+
+function probability(total, explore) {
+  if (total <= 1) return 1;
+  let sum = 0;
+  for (let j = explore; j <= total - 1; j++) sum += 1 / j;
+  return explore / total * sum;
+}
+
+function plan(total) {
+  const explore = Math.max(1, Math.min(total - 1, Math.round(total / Math.E)));
+  return { explore, probability: probability(total, explore) };
+}
+
+function validTotal() {
+  const value = Math.round(Number($("#total").value));
+  return Math.max(3, Math.min(500, Number.isFinite(value) ? value : 20));
+}
+
+function updatePreview() {
+  const total = validTotal();
+  const { explore, probability: chance } = plan(total);
+  $("#previewExplore").textContent = explore;
+  $("#previewHunt").textContent = total - explore;
+  $("#previewProbability").textContent = `${Math.round(chance * 100)}%`;
+}
+
+function showScreen(id) {
+  screens.forEach(name => $("#" + name).classList.toggle("active", name === id));
+  $("#headerReset").hidden = id === "setup";
+}
+
+function renderRatings() {
+  const container = $("#ratings");
+  container.innerHTML = "";
+  for (let score = 1; score <= 10; score++) {
+    const button = document.createElement("button");
+    button.className = "rating";
+    button.textContent = score;
+    button.setAttribute("aria-label", `Оценка ${score} из 10`);
+    button.addEventListener("click", () => rate(score));
+    container.appendChild(button);
+  }
+}
+
+function renderSession() {
+  const exploring = state.index <= state.explore;
+  $("#current").textContent = state.index;
+  $("#totalShown").textContent = state.total;
+  $("#progress").style.width = `${(state.index - 1) / state.total * 100}%`;
+  $("#phase").textContent = exploring ? "Разведка" : "Можно выбирать";
+  $("#phase").classList.toggle("hunt", !exploring);
+  $("#sessionProbability").textContent =
+    `Теоретический шанс на лучший: ${Math.round(state.probability * 100)}%`;
+  $("#undo").disabled = !state.scores.length;
+
+  if (exploring) {
+    $("#thresholdLabel").textContent = "Ищем лучший ориентир";
+    $("#thresholdText").textContent =
+      `Разведка: ${state.index - 1} из ${state.explore}`;
+    $("#thresholdScore").textContent =
+      Number.isFinite(state.best) ? state.best : "—";
+  } else {
+    $("#thresholdLabel").textContent = "Теперь бери первый результат выше";
+    $("#thresholdText").textContent = "Порог разведки";
+    $("#thresholdScore").textContent = state.best;
+  }
+}
+
+function start() {
+  state.total = validTotal();
+  const nextPlan = plan(state.total);
+  state.explore = nextPlan.explore;
+  state.probability = nextPlan.probability;
+  state.index = 1;
+  state.scores = [];
+  state.best = -Infinity;
+  state.bestIndex = 0;
+  state.finished = false;
+  $("#total").value = state.total;
+  renderSession();
+  showScreen("session");
+  save();
+}
+
+function rate(score) {
+  if (state.finished) return;
+  const itemIndex = state.index;
+  state.scores.push(score);
+
+  if (itemIndex <= state.explore) {
+    if (score > state.best) {
+      state.best = score;
+      state.bestIndex = itemIndex;
+    }
+  } else if (score > state.best) {
+    finishSuccess(itemIndex, score);
+    return;
+  }
+
+  if (itemIndex >= state.total) {
+    finishWithoutWinner();
+    return;
+  }
+  state.index += 1;
+  renderSession();
+  save();
+}
+
+function finishSuccess(itemIndex, score) {
+  state.finished = true;
+  $("#signal").textContent = "✓";
+  $("#resultKicker").textContent = "Порог пройден";
+  $("#resultTitle").innerHTML = "ЭТО ОН.<br>БЕРИ.";
+  $("#resultSubtitle").textContent =
+    `Вариант №${itemIndex} — первый после разведки, который оказался лучше порога.`;
+  $("#resultScore").textContent = `${score}/10`;
+  $("#resultThreshold").textContent = `${state.best}/10`;
+  showScreen("result");
+  signal();
+  clearSave();
+}
+
+function finishWithoutWinner() {
+  state.finished = true;
+  const highest = Math.max(...state.scores);
+  const bestIndex = state.scores.indexOf(highest) + 1;
+  $("#signal").textContent = "…";
+  $("#resultKicker").textContent = "Порог никто не превысил";
+  $("#resultTitle").innerHTML = "В ЭТОТ РАЗ<br>НЕ СРАБОТАЛО";
+  $("#resultSubtitle").textContent =
+    `Правило повышает шанс, но не даёт гарантии. Лучшая оценка была у варианта №${bestIndex}.`;
+  $("#resultScore").textContent = `${highest}/10`;
+  $("#resultThreshold").textContent = `${state.best}/10`;
+  showScreen("result");
+  clearSave();
+}
+
+function recomputeBest() {
+  state.best = -Infinity;
+  state.bestIndex = 0;
+  state.scores.slice(0, state.explore).forEach((score, index) => {
+    if (score > state.best) {
+      state.best = score;
+      state.bestIndex = index + 1;
+    }
+  });
+}
+
+function undo() {
+  if (!state.scores.length || state.finished) return;
+  state.scores.pop();
+  state.index = Math.max(1, state.scores.length + 1);
+  recomputeBest();
+  renderSession();
+  save();
+}
+
+function signal() {
+  const flash = $("#flash");
+  flash.classList.remove("go");
+  void flash.offsetWidth;
+  flash.classList.add("go");
+}
+
+function save() {
+  localStorage.setItem("secretary37", JSON.stringify({
+    total: state.total,
+    explore: state.explore,
+    probability: state.probability,
+    index: state.index,
+    scores: state.scores,
+    best: state.best,
+    bestIndex: state.bestIndex
+  }));
+}
+
+function clearSave() {
+  localStorage.removeItem("secretary37");
+}
+
+function restore() {
+  try {
+    const stored = JSON.parse(localStorage.getItem("secretary37"));
+    if (!stored || !stored.total || stored.index > stored.total) return false;
+    Object.assign(state, stored, { finished: false });
+    $("#total").value = state.total;
+    renderSession();
+    showScreen("session");
+    return true;
+  } catch (_) {
+    clearSave();
+    return false;
+  }
+}
+
+function reset() {
+  clearSave();
+  state.finished = false;
+  showScreen("setup");
+  updatePreview();
+}
+
+$("#total").addEventListener("input", updatePreview);
+$("#total").addEventListener("keydown", event => {
+  if (event.key === "Enter") start();
+});
+$("#start").addEventListener("click", start);
+$("#undo").addEventListener("click", undo);
+$("#again").addEventListener("click", reset);
+$("#headerReset").addEventListener("click", reset);
+renderRatings();
+updatePreview();
+restore();
+</script>
+</body>
+</html>
